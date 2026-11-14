@@ -367,6 +367,9 @@ a.pill{text-decoration:none}
 @keyframes shad{0%,100%{transform:translateY(0) scale(1);opacity:1}50%{transform:translateY(7px) scale(.78);opacity:.65}}
 .bubbles{margin-bottom:40px}
 @media (prefers-reduced-motion:reduce){.bub::after{animation:none}}
+.gm-surp{grid-column:1/-1;justify-self:start;background:var(--mint);color:var(--deep);border-radius:999px;padding:4px 12px;font-size:12px;font-weight:800}
+.gm-surp::before{content:"🎁 "}
+.confetti{position:fixed;inset:0;pointer-events:none;z-index:70}
 .vtitle{margin:4px 0 0;font-size:34px}
 .view{display:flex;flex-direction:column;gap:22px}
 .app{padding-bottom:120px}
@@ -434,7 +437,7 @@ a.pill{text-decoration:none}
   </section>
 
   <section aria-label="Aujourd'hui" style="display:flex;flex-direction:column;gap:18px">
-    <button class="gmini" id="goalMini" aria-label="Voir le défi"><span class="gm-l"><b id="gmName">Classique</b><span id="gmTxt">Objectif du jour : 1 objet</span></span><span class="gm-n disp" id="gmN">0/1</span><span class="gm-bar"><i id="gmBar"></i></span></button>
+    <button class="gmini" id="goalMini" aria-label="Voir le défi"><span class="gm-l"><b id="gmName">Classique</b><span id="gmTxt">Objectif du jour : 1 objet</span></span><span class="gm-n disp" id="gmN">0/1</span><span class="gm-bar"><i id="gmBar"></i></span><span class="gm-surp hidden" id="gmSurp"></span></button>
     <input class="sr" type="file" id="photoInput" accept="image/*" capture="environment">
     <input class="sr" type="file" id="galleryInput" accept="image/*">
     <div id="todayTodo" class="shoot" style="flex-direction:row;flex-wrap:wrap;justify-content:center;gap:8px">
@@ -833,6 +836,24 @@ function checkBadges(s){let seen={};try{seen=JSON.parse(localStorage.getItem('uo
   try{localStorage.setItem('uopj-badges',JSON.stringify(seen))}catch(_){}
   if(msg)setTimeout(()=>toast(msg),900)}
 document.getElementById('bdgRow').addEventListener('click',e=>{const b=e.target.closest('[data-bdg]');if(!b)return;const B=BADGES.find(x=>x.k===b.dataset.bdg);toast(`${B.name} : `+LEVELS.map((t,i)=>`${B.lv[i]} (${t})`).join(' · '))});
+/* ---------- Surprises ---------- */
+const SURPRISES=['un objet de la salle de bain','un vêtement que vous ne portez plus','un objet de la cuisine','un livre déjà lu','un jouet oublié','un câble ou chargeur inutile','un objet du garage','une tasse ou un mug en trop','un objet de la voiture','un sac ou une pochette','un objet de déco qui ne vous plaît plus','un produit périmé','un objet du bureau','une paire de chaussures','un objet en double','un cadeau jamais utilisé','un objet de la chambre','un ustensile jamais utilisé','un objet sous le lit','un objet du placard de l\'entrée'];
+const hashDay=d=>{let h=7;for(const c of d)h=(h*31+c.charCodeAt(0))>>>0;return h};
+function surpriseOfDay(){const d=getDefi();if(d.mode==='avent'&&aventState().phase==='live')return null;const h=hashDay(today());return h%3===0?SURPRISES[(h>>3)%SURPRISES.length]:null}
+const CHEERS=['Bravo, un objet de moins !','Bien joué, la maison respire !','Et de un ! Votre série continue.','Super, quelqu\'un va en profiter.','Objectif atteint, vous êtes au top !','Un pas de plus vers une maison légère.','Génial, encore un peu d\'air en plus.','Mission du jour accomplie !'];
+const DONE_TXT=['Revenez demain pour prolonger votre série.','Demain, un nouvel objet vous attend.','Votre maison vous dit merci. À demain !','Encore un jour et votre série grandit.','Petit geste, grand effet. À demain !'];
+const pick=(a,seed)=>a[seed%a.length];
+function confetti(){if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  const c=document.createElement('canvas');c.className='confetti';c.width=innerWidth;c.height=innerHeight;document.body.appendChild(c);const g=c.getContext('2d');
+  const cols=['#2f4bff','#ffd23a','#ff9fd2','#ff5a3c','#173f3c','#cfe5df'];
+  const P=Array.from({length:120},()=>({x:innerWidth/2+(Math.random()-.5)*80,y:innerHeight*.45,vx:(Math.random()-.5)*14,vy:-Math.random()*14-6,r:Math.random()*6+4,c:cols[Math.random()*cols.length|0],a:Math.random()*6,va:(Math.random()-.5)*.4}));
+  const t0=performance.now();(function f(t){const k=(t-t0)/1600;g.clearRect(0,0,c.width,c.height);
+    P.forEach(p=>{p.vy+=.45;p.vx*=.99;p.x+=p.vx;p.y+=p.vy;p.a+=p.va;g.save();g.globalAlpha=Math.max(0,1-k);g.translate(p.x,p.y);g.rotate(p.a);g.fillStyle=p.c;g.fillRect(-p.r/2,-p.r/4,p.r,p.r/2);g.restore()});
+    if(k<1)requestAnimationFrame(f);else c.remove()})(t0)}
+function celebrateIfDone(){if(isExample())return false;const g=goalInfo(items.filter(x=>!x.example));if(g.count<g.goal)return false;
+  let last='';try{last=localStorage.getItem('uopj-cele')||''}catch(_){}if(last===today())return false;
+  try{localStorage.setItem('uopj-cele',today())}catch(_){}
+  confetti();try{navigator.vibrate&&navigator.vibrate([60,40,90])}catch(_){}return true}
 /* ---------- Défis ---------- */
 const DEFI_NAMES={classique:'Classique',minsgame:'MinsGame',trente:'Classique',avent:'Avent'};
 function getDefi(){try{const d=JSON.parse(localStorage.getItem('uopj-defi'))||{mode:'classique'};return d.mode==='trente'?{mode:'classique'}:d}catch(_){return {mode:'classique'}}}
@@ -913,6 +934,8 @@ function renderGoal(list){
   $('#goalTxt').textContent=g.txt;
   $('#goalSub').textContent=g.sub;$('#goalSub').classList.toggle('hidden',!g.sub);
   $('#goalBar').style.width=(c/g.goal*100)+'%';
+  {const sp=surpriseOfDay(),done=g.count>=g.goal;$('#gmSurp').textContent=sp?`Surprise du jour : ${sp}`:'';$('#gmSurp').classList.toggle('hidden',!sp||done)}
+  $('#doneTxt').textContent=pick(DONE_TXT,hashDay(today()));
   $('#gmName').textContent=DEFI_NAMES[g.mode];$('#gmTxt').textContent=g.txt;$('#gmN').textContent=`${g.count}/${g.goal}`;$('#gmBar').style.width=(c/g.goal*100)+'%';
   const shown=view();$('#aventGrid').classList.toggle('week7',!!g.week);
   if(g.avent)renderAvent(shown,g.avent);else if(g.mins)renderMins(shown,g.mins);else renderWeekGrid(shown);
@@ -997,7 +1020,7 @@ const onPick=async e=>{
   Object.assign(ed,{type:null,channel:'ligne',textEdited:false,label:true,rot:0});
   $('#edName').value='';$('#edPrice').value='';$('#edWant').value='';$('#edText').value='';
   try{$('#edPlace').value=localStorage.getItem('uopj-place')||''}catch(_){}
-  {const st=aventState();$('#edName').placeholder=getDefi().mode==='avent'&&st.phase==='live'?`Case ${st.day} : ${AVENT[st.day-1].toLowerCase()}`:'Lampe de chevet, bon état';}
+  {const st=aventState();$('#edName').placeholder=getDefi().mode==='avent'&&st.phase==='live'?`Case ${st.day} : ${AVENT[st.day-1].toLowerCase()}`:(surpriseOfDay()?`Surprise : ${surpriseOfDay()}`:'Lampe de chevet, bon état');}
   $('#optLabel').checked=true;ed.scene.detour=false;
   setPreset('original',false);buildSrc();resetCrop();rebuild(true);syncEditor();
   $('#editor').classList.add('open');$('#editor').scrollTop=0;
@@ -1206,7 +1229,8 @@ $('#edSave').addEventListener('click',()=>{
   tab=it.status==='gone'?'partis':channel==='vg'?'vg':'attente';rafaleAdd();render();
   if(it.status==='gone')bumpCounter();
   const s=streak(view());
-  toast(firstToday?`Série : ${s} jour${s>1?'s':''} de suite !`:'Objet ajouté !');
+  const cele=celebrateIfDone();
+  toast(cele?`${pick(CHEERS,Math.random()*1e6|0)} Série : ${s} jour${s>1?'s':''}.`:firstToday?`Série : ${s} jour${s>1?'s':''} de suite !`:'Objet ajouté !');
   if(channel==='ligne')setTimeout(()=>openShare(img,it.text,it),400);else maybeInvite();
 });
 
