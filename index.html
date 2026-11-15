@@ -185,6 +185,11 @@ button{cursor:pointer}
 .gridl{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .2s;background:linear-gradient(90deg,transparent calc(33.33% - 1px),rgba(255,255,255,.45) 0,rgba(255,255,255,.45) calc(33.33% + 1px),transparent 0,transparent calc(66.66% - 1px),rgba(255,255,255,.45) 0,rgba(255,255,255,.45) calc(66.66% + 1px),transparent 0),linear-gradient(transparent calc(33.33% - 1px),rgba(255,255,255,.45) 0,rgba(255,255,255,.45) calc(33.33% + 1px),transparent 0,transparent calc(66.66% - 1px),rgba(255,255,255,.45) 0,rgba(255,255,255,.45) calc(66.66% + 1px),transparent 0)}
 .cropwrap.drag .gridl{opacity:1}
 .croptools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.exrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.exrow:empty{display:none}
+.exth{position:relative;width:72px;height:72px;flex:none}
+.exth img{width:100%;height:100%;object-fit:cover;border-radius:14px;display:block;background:#fff}
+.exth button{position:absolute;top:-7px;right:-7px;width:26px;height:26px;border-radius:50%;border:2px solid var(--paper);background:var(--ink);color:#fff;font-weight:800;font-size:15px;line-height:1;cursor:pointer;padding:0}
 .zl{flex:1;min-width:150px;display:flex;align-items:center;gap:8px;background:var(--card);border-radius:999px;padding:8px 14px}
 .zl input,.sl input{flex:1;width:100%;accent-color:var(--blue)}
 .fxrow{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 8px;scrollbar-width:none}
@@ -640,7 +645,7 @@ body.first-run .bnav .fab{animation:fabP 1.6s ease-in-out infinite}
   <div class="app">
     <div class="sheet-head"><h2 class="disp" id="edTitle">Votre objet</h2><button class="close" id="edClose" aria-label="Fermer"><svg width="22" height="22"><use href="#i-x"/></svg></button></div>
     <div class="cropwrap"><canvas class="preview" id="edCanvas" width="900" height="900"></canvas><span class="gridl" aria-hidden="true"></span></div>
-    <p class="hint">Glissez la photo pour la déplacer. Pincez avec deux doigts ou utilisez le curseur pour zoomer.</p>
+    <p class="hint">Glissez la photo pour la déplacer. Pincez avec deux doigts ou utilisez le curseur pour zoomer ou dézoomer et voir l'objet en entier.</p>
     <div class="croptools">
       <label class="zl" for="zoom"><svg width="18" height="18"><use href="#i-zoom"/></svg><input type="range" id="zoom" min="1" max="5" step="0.01" value="1" aria-label="Zoom"></label>
       <button class="pill line sm" id="btnRot" type="button"><svg width="16" height="16"><use href="#i-rot"/></svg> Tourner</button>
@@ -670,6 +675,13 @@ body.first-run .bnav .fab{animation:fabP 1.6s ease-in-out infinite}
     </div>
     <div class="toggles">
       <label id="labelToggle"><input type="checkbox" id="optLabel" checked> Pastille sur la photo</label>
+    </div>
+    <div class="field" id="extraField">
+      <span class="lab">Autres photos (facultatif)</span>
+      <div class="exrow" id="exRow"></div>
+      <div class="croptools"><button class="pill line sm" id="exAdd" type="button">+ Ajouter des photos</button><span class="hint" id="exCount" style="padding:0"></span></div>
+      <p class="hint">Autres angles, détails, défauts : utiles pour une annonce. 6 photos maximum par objet.</p>
+      <input class="sr" type="file" id="extraInput" accept="image/*" multiple>
     </div>
     <div class="field"><label class="lab" for="edName">C'est quoi ?</label><input id="edName" placeholder="Lampe de chevet, bon état" maxlength="60"></div>
     <div class="field">
@@ -701,8 +713,10 @@ body.first-run .bnav .fab{animation:fabP 1.6s ease-in-out infinite}
   <div class="app">
     <div class="sheet-head"><h2 class="disp" id="shTitle">Partager</h2><button class="close" id="shClose" aria-label="Fermer"><svg width="22" height="22"><use href="#i-x"/></svg></button></div>
     <div class="pv-wrap"><img class="preview" id="shImg" alt="Image à partager"></div>
+    <div class="exrow" id="shExtra"></div>
     <div class="field" id="shTextField"><label class="lab" for="shText">Texte</label><textarea id="shText"></textarea></div>
-    <button class="pill ink big-btn hidden" id="shNative"><svg width="22" height="22"><use href="#i-arrow"/></svg> Partager la photo et le texte</button>
+    <button class="pill ink big-btn hidden" id="shNative"><svg width="22" height="22"><use href="#i-arrow"/></svg> <span id="shNativeTxt">Partager la photo et le texte</span></button>
+    <button class="pill line big-btn js-savepics" type="button"><span class="js-savetxt">Enregistrer la photo</span></button>
     <div class="field" id="shApps">
       <span class="lab">Envoyer le texte avec</span>
       <div class="apps">
@@ -719,13 +733,14 @@ body.first-run .bnav .fab{animation:fabP 1.6s ease-in-out infinite}
     <div class="assist hidden" id="assist">
       <h3 class="disp" id="asTitle">Annonce Leboncoin</h3>
       <p class="hint" style="padding:0">Le site demande chaque information dans une case différente. Copiez-les une par une : votre clavier les garde en mémoire, il vous suffit de toucher la bonne au moment de coller.</p>
+      <button class="pill line big-btn js-savepics" type="button"><span class="js-savetxt">Enregistrer la photo</span></button>
       <div class="steps">
         <button class="step" data-copy="title"><b>1</b><span><small>Titre</small><em id="asT"></em></span>Copier</button>
         <button class="step" data-copy="desc"><b>2</b><span><small>Description</small><em id="asD"></em></span>Copier</button>
         <button class="step" data-copy="price" id="asPriceRow"><b>3</b><span><small>Prix</small><em id="asP"></em></span>Copier</button>
       </div>
       <a class="pill ink big-btn" id="asOpen" target="_blank" rel="noopener" href="#">Ouvrir Leboncoin <svg width="22" height="22"><use href="#i-arrow"/></svg></a>
-      <p class="hint" style="padding:0">À l'étape « Photos », ajoutez la photo que vous avez enregistrée.</p>
+      <p class="hint" style="padding:0">À l'étape « Photos », touchez « Choisir depuis la galerie » et sélectionnez les photos enregistrées (album Téléchargements).</p>
       <div class="safety"><h4>Vendre en sécurité</h4><div class="safety-list"></div></div>
     </div>
   </div>
@@ -1086,7 +1101,7 @@ const PRESETS={
   doux:{auto:true,b:10,c:-15,s:-8,w:10,sh:0,white:false},
   fondblanc:{auto:true,b:12,c:12,s:6,w:0,sh:40,white:true}
 };
-const ed={scene:{detour:false,tol:45,bg:'blanc',frame:'aucun'},cut:null,cutFresh:false,img:null,src:null,base:null,type:null,channel:'ligne',label:true,textEdited:false,rot:0,zoom:1,cx:0,cy:0,preset:'original',adj:{...PRESETS.original}};
+const ed={extra:[],scene:{detour:false,tol:45,bg:'blanc',frame:'aucun'},cut:null,cutFresh:false,img:null,src:null,base:null,type:null,channel:'ligne',label:true,textEdited:false,rot:0,zoom:1,cx:0,cy:0,preset:'original',adj:{...PRESETS.original}};
 const onPick=async e=>{
   const f=e.target.files&&e.target.files[0];e.target.value='';if(!f)return;
   try{ed.img=await loadImage(f)}catch(err){toast('Image illisible. Essayez un JPG ou un PNG.');return}
@@ -1094,10 +1109,27 @@ const onPick=async e=>{
   $('#edName').value='';$('#edPrice').value='';$('#edWant').value='';$('#edText').value='';
   try{$('#edPlace').value=localStorage.getItem('uopj-place')||''}catch(_){}
   {const st=aventState();$('#edName').placeholder=getDefi().mode==='avent'&&st.phase==='live'?`Case ${st.day} : ${AVENT[st.day-1].toLowerCase()}`:(surpriseOfDay()?`Surprise : ${surpriseOfDay()}`:'Lampe de chevet, bon état');}
-  $('#optLabel').checked=true;ed.scene.detour=false;
+  $('#optLabel').checked=true;ed.scene.detour=false;ed.extra=[];renderExtra();
   setPreset('original',false);buildSrc();resetCrop();rebuild(true);syncEditor();
   $('#editor').classList.add('open');$('#editor').scrollTop=0;
 };
+/* Photos supplémentaires : gardées entières (non recadrées), limitées à 1600 px */
+const MAXEX=5;
+async function fileToJpeg(f){const i=await loadImage(f),k=Math.min(1,1600/Math.max(i.naturalWidth,i.naturalHeight)),c=document.createElement('canvas');c.width=Math.round(i.naturalWidth*k);c.height=Math.round(i.naturalHeight*k);const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.drawImage(i,0,0,c.width,c.height);URL.revokeObjectURL(i.src);return c.toDataURL('image/jpeg',.85)}
+function renderExtra(){
+  $('#exRow').innerHTML=ed.extra.map((u,i)=>`<span class="exth"><img src="${u}" alt="Photo ${i+2}"><button type="button" data-exdel="${i}" aria-label="Retirer la photo ${i+2}">×</button></span>`).join('');
+  $('#exAdd').classList.toggle('hidden',ed.extra.length>=MAXEX);
+  $('#exCount').textContent=ed.extra.length?`${ed.extra.length+1} photos en tout`:'';
+}
+$('#exAdd').addEventListener('click',()=>$('#extraInput').click());
+$('#extraInput').addEventListener('change',async e=>{
+  const fs=[...(e.target.files||[])];e.target.value='';if(!fs.length)return;
+  const room=MAXEX-ed.extra.length;let bad=0;
+  for(const f of fs.slice(0,room)){try{ed.extra.push(await fileToJpeg(f))}catch(_){bad++}}
+  renderExtra();
+  if(fs.length>room)toast('6 photos maximum par objet.');else if(bad)toast('Une image est illisible. Essayez un JPG ou un PNG.');
+});
+$('#exRow').addEventListener('click',e=>{const b=e.target.closest('[data-exdel]');if(!b)return;ed.extra.splice(+b.dataset.exdel,1);renderExtra()});
 $('#photoInput').addEventListener('change',onPick);
 $('#galleryInput').addEventListener('change',onPick);
 function loadImage(file){return new Promise((res,rej)=>{const u=URL.createObjectURL(file),i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=u})}
@@ -1107,16 +1139,21 @@ function buildSrc(){
   const odd=ed.rot%2===1,c=document.createElement('canvas');c.width=odd?h:w;c.height=odd?w:h;const g=c.getContext('2d');
   g.translate(c.width/2,c.height/2);g.rotate(ed.rot*Math.PI/2);g.drawImage(ed.img,-w/2,-h/2,w,h);ed.src=c;
 }
-function resetCrop(){ed.zoom=1;ed.cx=ed.src.width/2;ed.cy=ed.src.height/2;$('#zoom').value=1}
+/* Zoom 1 = la photo remplit le carré. En dessous de 1, on dézoome jusqu'à voir la photo entière (marges blanches). */
+const minZoom=()=>Math.min(ed.src.width,ed.src.height)/Math.max(ed.src.width,ed.src.height);
+function resetCrop(){const mz=minZoom();ed.zoom=mz<.7?mz:1;ed.cx=ed.src.width/2;ed.cy=ed.src.height/2;$('#zoom').min=mz;$('#zoom').value=ed.zoom}
 function clampCrop(){
-  const W=ed.src.width,H=ed.src.height;ed.zoom=Math.min(5,Math.max(1,ed.zoom));
-  const side=Math.min(W,H)/ed.zoom;ed.cx=Math.min(W-side/2,Math.max(side/2,ed.cx));ed.cy=Math.min(H-side/2,Math.max(side/2,ed.cy));return side;
+  const W=ed.src.width,H=ed.src.height;ed.zoom=Math.min(5,Math.max(minZoom(),ed.zoom));
+  const side=Math.min(W,H)/ed.zoom;
+  ed.cx=side>=W?W/2:Math.min(W-side/2,Math.max(side/2,ed.cx));
+  ed.cy=side>=H?H/2:Math.min(H-side/2,Math.max(side/2,ed.cy));return side;
 }
 function rebuild(full){
   const side=clampCrop();
   if(!ed.base){ed.base=document.createElement('canvas');ed.base.width=ed.base.height=S}
   const g=ed.base.getContext('2d');g.imageSmoothingQuality='high';
-  g.drawImage(ed.src,ed.cx-side/2,ed.cy-side/2,side,side,0,0,S,S);
+  const k=S/side;g.fillStyle='#fff';g.fillRect(0,0,S,S);
+  g.drawImage(ed.src,S/2-ed.cx*k,S/2-ed.cy*k,ed.src.width*k,ed.src.height*k);
   retouch(g,full);ed.cutFresh=false;if(full&&ed.scene.detour)computeCut();drawEditor();
 }
 function retouch(g,full){
@@ -1278,8 +1315,9 @@ function syncEditor(){
   $('#jeteHint').classList.toggle('hidden',t!=='jete');
   $('#labelToggle').classList.toggle('hidden',t==='jete');
   if(online&&!ed.textEdited)$('#edText').value=autoText();
-  $('#edSave').disabled=!t;
-  $('#edSaveTxt').textContent=!t?'Choisissez d\'abord':t==='jete'?'C\'est fait !':(t==='vente'&&ed.channel==='vg')?'Au vide-grenier':'Enregistrer et partager';
+  const needName=online&&!$('#edName').value.trim();
+  $('#edSave').disabled=!t||needName;
+  $('#edSaveTxt').textContent=!t?'Choisissez d\'abord':needName?'Nommez d\'abord l\'objet':t==='jete'?'C\'est fait !':(t==='vente'&&ed.channel==='vg')?'Au vide-grenier':'Enregistrer et partager';
   drawEditor();
 }
 document.querySelectorAll('.choice').forEach(b=>b.addEventListener('click',()=>{ed.type=b.dataset.type;ed.textEdited=false;syncEditor()}));
@@ -1314,17 +1352,32 @@ $('#edSave').addEventListener('click',()=>{
   const img=$('#edCanvas').toDataURL('image/jpeg',.85);
   const channel=ed.type==='jete'?'':ed.type==='vente'?ed.channel:'ligne';
   const it={id:uid(),name:$('#edName').value.trim(),type:ed.type,channel,price:parsePrice($('#edPrice').value),soldPrice:0,created:today(),status:ed.type==='jete'?'gone':'pending',goneAt:ed.type==='jete'?today():null,img,text:$('#edText').value};
+  if(ed.extra.length)it.extra=ed.extra.slice();
   save(it);$('#editor').classList.remove('open');
   afterSave(it,firstToday);
 });
 
 /* ---------- Partage ---------- */
 function dataURLtoBlob(u){const [h,b]=u.split(','),m=h.match(/:(.*?);/)[1],bin=atob(b),a=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);return new Blob([a],{type:m})}
-let shareFile=null,shareMeta=null;
+let shareFile=null,shareMeta=null,shareFiles=[],sharePics=[];
+const picName=i=>((shareMeta&&shareMeta.name||'objet').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9]+/g,'-').replace(/^-|-$/g,'').toLowerCase().slice(0,30)||'objet')+'-'+(i+1)+'.jpg';
+async function savePics(){
+  const n=sharePics.length;if(!n)return;
+  if(isIOS()&&shareFiles.length&&!inPreview){try{await navigator.share({files:shareFiles});return}catch(e){if(e&&e.name==='AbortError')return}}
+  for(let i=0;i<n;i++){const a=document.createElement('a'),u=URL.createObjectURL(dataURLtoBlob(sharePics[i]));a.href=u;a.download=picName(i);document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);if(i<n-1)await new Promise(r=>setTimeout(r,450))}
+  toast(n>1?`${n} photos enregistrées dans vos téléchargements.`:'Photo enregistrée dans vos téléchargements.');
+}
+document.querySelectorAll('.js-savepics').forEach(b=>b.addEventListener('click',savePics));
 const inPreview=(()=>{try{return window.self!==window.top}catch(_){return true}})();
 function openShare(img,text,meta){
-  shareMeta=meta||null;shareFile=null;
-  try{const f=new File([dataURLtoBlob(img)],'objet.jpg',{type:'image/jpeg'});if(navigator.canShare&&navigator.canShare({files:[f]}))shareFile=f}catch(_){}
+  shareMeta=meta||null;shareFile=null;shareFiles=[];
+  sharePics=[img,...((meta&&meta.extra)||[])];
+  try{const fs=sharePics.map((u,i)=>new File([dataURLtoBlob(u)],picName(i),{type:'image/jpeg'}));
+    if(navigator.canShare&&navigator.canShare({files:[fs[0]]})){shareFile=fs[0];shareFiles=fs.length>1&&navigator.canShare({files:fs})?fs:[fs[0]]}}catch(_){}
+  const np=sharePics.length;
+  $('#shExtra').innerHTML=sharePics.slice(1).map((u,i)=>`<span class="exth"><img src="${u}" alt="Photo ${i+2}"></span>`).join('');
+  $('#shNativeTxt').textContent=shareFiles.length>1?`Partager les ${shareFiles.length} photos et le texte`:'Partager la photo et le texte';
+  document.querySelectorAll('.js-savetxt').forEach(x=>x.textContent=np>1?`Enregistrer les ${np} photos`:'Enregistrer la photo');
   $('#shImg').src=img;$('#shText').value=text||'';
   $('#shTextField').classList.toggle('hidden',!text);
   $('#shNative').classList.toggle('hidden',!shareFile);
@@ -1375,7 +1428,7 @@ $('#btnIg').addEventListener('click',async()=>{
 });
 $('#shNative').addEventListener('click',async()=>{
   if(!shareFile)return;
-  try{await navigator.share({files:[shareFile],text:$('#shText').value})}
+  try{await navigator.share({files:shareFiles.length?shareFiles:[shareFile],text:$('#shText').value})}
   catch(e){if(e&&e.name==='AbortError')return;$('#shNative').classList.add('hidden');toast('Partage direct indisponible ici : utilisez les boutons.')}
 });
 $('#shClose').addEventListener('click',()=>{$('#share').classList.remove('open');maybeInvite()});

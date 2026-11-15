@@ -1,4 +1,4 @@
-const CACHE="uopj-v68";
+const CACHE="uopj-v71";
 const CORE=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./og-image.png"];
 // Chaque fichier est mis en cache séparément : un fichier manquant ne bloque plus l'installation.
 self.addEventListener("install",e=>{e.waitUntil(caches.open(CACHE).then(c=>Promise.all(CORE.map(u=>c.add(u).catch(()=>null)))).then(()=>self.skipWaiting()))});
