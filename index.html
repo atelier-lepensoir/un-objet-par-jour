@@ -311,9 +311,8 @@ a.pill{text-decoration:none}
 .pubbox .pill{align-self:flex-start}
 .reply{border:0;background:var(--card);border-radius:22px;padding:14px 16px;text-align:left;font-size:15px;line-height:1.35;display:flex;gap:12px;align-items:center;justify-content:space-between;cursor:pointer;box-shadow:0 1px 0 rgba(27,27,31,.05),0 10px 24px -8px rgba(27,27,31,.18)}
 .reply b{flex:none;font-size:13px}.reply.ok b{color:var(--blue)}
-#nudgeHome{align-self:center;border:0;background:#fff0b8;font-weight:800;cursor:pointer}
-#pendHome{align-self:center;border:0;font-weight:800;cursor:pointer;border-radius:22px;text-align:center;line-height:1.35}
-#pendHome small{display:block;font-weight:600;color:#555}
+.wait{position:absolute;left:max(0px,calc(50% - 200px));bottom:-34px;background:var(--mint);color:var(--deep);border:0;border-radius:999px;padding:7px 14px;font:inherit;font-weight:800;transform:rotate(7deg);white-space:nowrap;z-index:3;cursor:pointer}
+.wait.due::after{content:"";position:absolute;top:-4px;right:-2px;width:13px;height:13px;border-radius:50%;background:var(--red);border:2px solid var(--paper)}
 .split{background:#dfe4ff;border-radius:22px;padding:14px;font-size:14px}
 .split summary{font-weight:800;cursor:pointer}.split[open] summary{margin-bottom:8px}
 .split p{margin:0}.split ol{margin:8px 0;padding-left:22px;display:flex;flex-direction:column;gap:6px}
@@ -485,13 +484,12 @@ body.first-run .bnav .fab{animation:fabP 1.6s ease-in-out infinite}
       <div class="bub troc"><b id="sTroc">0</b><span>échangés</span></div>
       <div class="bub jete"><b id="sJete">0</b><span>recyclés</span></div>
       <div class="euro">+<b id="sEuros">0</b> €</div>
+      <button class="wait hidden" id="pendHome" type="button"></button>
     </div>
   </section>
 
   <section aria-label="Aujourd'hui" style="display:flex;flex-direction:column;gap:18px">
     <button class="gmini" id="goalMini" aria-label="Voir le défi"><span class="gm-l"><b id="gmName">Classique</b><span id="gmTxt">Objectif du jour : 1 objet</span></span><span class="gm-n disp" id="gmN">0/1</span><span class="gm-bar"><i id="gmBar"></i></span><span class="gm-surp hidden" id="gmSurp"></span></button>
-    <button class="note hidden" id="pendHome" type="button"></button>
-    <button class="note hidden" id="nudgeHome" type="button"></button>
     <input class="sr" type="file" id="photoInput" accept="image/*" capture="environment">
     <input class="sr" type="file" id="galleryInput" accept="image/*">
     <div id="todayTodo" class="shoot" style="flex-direction:row;flex-wrap:wrap;justify-content:center;gap:8px">
@@ -970,10 +968,9 @@ function render(){
   $('#todayTodo').classList.toggle('hidden',doneToday);$('#todayDone').classList.toggle('hidden',!doneToday);
   const att=list.filter(x=>x.status==='pending'&&x.channel==='ligne'),vg=list.filter(x=>x.status==='pending'&&x.channel==='vg'),partis=list.filter(x=>x.status==='gone');
   $('#nAtt').textContent=att.length;$('#nVg').textContent=vg.length;$('#nPartis').textContent=partis.length;
-  {const pe=list.filter(x=>x.status==='pending'),h=$('#pendHome'),c=t=>pe.filter(x=>x.type===t).length;
-   const parts=[[c('vente'),'à vendre'],[c('don'),'à donner'],[c('troc'),'à échanger']].filter(a=>a[0]).map(a=>a[0]+' '+a[1]);
-   h.classList.toggle('hidden',!pe.length);h.innerHTML=pe.length?`${pe.length} objet${pe.length>1?'s':''} en attente de départ. Voir<small>${parts.join(' · ')}</small>`:''}
-  {const nd=list.filter(nudgeDue).length,h=$('#nudgeHome');h.classList.toggle('hidden',!nd);h.textContent=nd>1?`${nd} objets attendent depuis plus de ${NUDGE_DAYS} jours. Voir`:`1 objet attend depuis plus de ${NUDGE_DAYS} jours. Voir`}
+  {const pe=list.filter(x=>x.status==='pending').length,nd=list.filter(nudgeDue).length,h=$('#pendHome');
+   h.classList.toggle('hidden',!pe);h.classList.toggle('due',nd>0);h.textContent=pe?pe+' en attente':'';
+   h.setAttribute('aria-label',pe?`${pe} objet${pe>1?'s':''} en attente de départ${nd?`, dont ${nd} depuis plus de ${NUDGE_DAYS} jours`:''}. Voir`:'')}
   document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===tab));
   const P=$('#panel');
   if(tab==='attente'){
@@ -1575,7 +1572,6 @@ $('#asUnpub').addEventListener('click',()=>{const it=shareMeta;if(!it||!it.pub)r
   save(it);$('#shText').value=withPub($('#shText').value,it);updateLinks();growText();syncPub();render();toast('Mention retirée.')});
 $('#rpClose').addEventListener('click',()=>$('#replies').classList.remove('open'));
 $('#rpList').addEventListener('click',e=>{const b=e.target.closest('.reply');if(!b)return;copyStr(b.querySelector('span').textContent,'Réponse copiée !').then(ok=>{if(ok){document.querySelectorAll('.reply').forEach(x=>{x.classList.remove('ok');x.querySelector('b').textContent='Copier'});b.classList.add('ok');b.querySelector('b').textContent='Copié'}})});
-$('#nudgeHome').addEventListener('click',()=>{tab='attente';render();go('vObjets')});
 $('#pendHome').addEventListener('click',()=>{const l=view().filter(x=>x.status==='pending');tab=l.some(x=>x.channel==='ligne')||!l.length?'attente':'vg';render();go('vObjets')});
 $('#asOpen').addEventListener('click',async e=>{e.preventDefault();const u=$('#asOpen').href;
   const ok=await copyStr(noPub($('#shText').value),'Description copiée. Tapez le titre et le prix dans le site.');
