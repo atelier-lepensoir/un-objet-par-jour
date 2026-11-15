@@ -736,7 +736,7 @@ body.first-run .bnav .fab{animation:fabP 1.6s ease-in-out infinite}
   <div class="app">
     <div class="sheet-head"><h2 class="disp" id="invTitle">Inviter un ami</h2><button class="close" id="invClose" aria-label="Fermer"><svg width="22" height="22"><use href="#i-x"/></svg></button></div>
     <div class="inv-hero" id="invIll2" aria-hidden="true"></div>
-    <div class="field"><label class="lab" for="invText">Votre message</label><textarea id="invText" style="min-height:150px"></textarea></div>
+    <div class="field"><label class="lab" for="invText">Votre message</label><textarea id="invText" style="min-height:300px"></textarea></div>
     <p class="note hidden" id="invNote" style="border-radius:22px">Dans la version installée, le lien de l'appli s'ajoute tout seul à la fin du message.</p>
     <button class="pill ink big-btn hidden" id="invNative"><svg width="22" height="22"><use href="#i-share"/></svg> Envoyer l'invitation avec l'image</button>
     <div class="apps">
@@ -1413,7 +1413,12 @@ $('#invIll2').innerHTML='<svg class="inv-blob" viewBox="0 0 300 300"><defs><path
 const appUrl=inPreview?'':location.origin+location.pathname;
 function inviteText(){
   const s=stats(view()),me=!isExample()&&s.n>0?` J'en suis déjà à ${s.n} objet${s.n>1?'s':''} en moins !`:'';
-  return `Je teste « Un objet par jour » : chaque jour, je me débarrasse d'un objet en le donnant, le vendant ou l'échangeant. C'est simple et ça fait du bien.${me} Essaie toi aussi${appUrl?' : '+appUrl:' !'}`;
+  return `Je teste « Un objet par jour » : chaque jour, je me débarrasse d'un objet en le donnant, le vendant ou l'échangeant. C'est simple et ça fait du bien.${me} Essaie toi aussi${appUrl?' : '+appUrl:' !'}
+
+Pour l'installer (gratuit, sans compte) :
+• Android : ouvre le lien dans Chrome, puis touche « Installer » sur le bandeau en haut (ou menu ⋮ → « Installer l'application »).
+• iPhone : ouvre le lien dans Safari, touche Partager (le carré avec une flèche, parfois dans « ••• »), puis « Sur l'écran d'accueil » → « Ajouter ».
+Si le lien s'ouvre dans WhatsApp, choisis d'abord « Ouvrir dans le navigateur ».`;
 }
 function invLinks(){const t=encodeURIComponent($('#invText').value);$('#invWa').href='https://wa.me/?text='+t;$('#invSms').href='sms:?&body='+t;$('#invMail').href='mailto:?subject='+encodeURIComponent('Une appli pour désencombrer')+'&body='+t;$('#invX').href='https://x.com/intent/post?text='+t}
 function openInvite(){
