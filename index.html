@@ -313,7 +313,7 @@ a.pill{text-decoration:none}
 .reply b{flex:none;font-size:13px}.reply.ok b{color:var(--blue)}
 #nudgeHome{align-self:center;border:0;background:#fff0b8;font-weight:800;cursor:pointer}
 .split{background:#dfe4ff;border-radius:22px;padding:14px;font-size:14px}
-.split h4{margin:0 0 6px;font-family:var(--font-display);font-weight:400;font-size:18px}
+.split summary{font-weight:800;cursor:pointer}.split[open] summary{margin-bottom:8px}
 .split p{margin:0}.split ol{margin:8px 0;padding-left:22px;display:flex;flex-direction:column;gap:6px}
 .safety h4{margin:0 0 8px;font-family:var(--font-display);font-weight:400;font-size:18px}
 .safety-list{display:flex;flex-direction:column;gap:8px}
@@ -766,9 +766,9 @@ body.first-run .bnav .fab{animation:fabP 1.6s ease-in-out infinite}
     </div>
     <div class="assist hidden" id="assist">
       <h3 class="disp" id="asTitle">Annonce Leboncoin</h3>
-      <p class="hint" style="padding:0">Le site demande chaque information dans une case différente, et le téléphone ne retient qu'un texte copié à la fois. Copiez-les un par un.</p>
-      <div class="split" id="asSplit">
-        <h4>Astuce : l'écran partagé</h4>
+      <p class="hint" style="padding:0">Le téléphone ne retient qu'un texte copié à la fois. Le plus simple : enregistrez les photos, puis touchez le gros bouton. Il copie la description et ouvre le site. Le titre et le prix sont courts : tapez-les directement.</p>
+      <details class="split" id="asSplit">
+        <summary>Astuce, si votre téléphone le propose : l'écran partagé</summary>
         <p>Gardez cette page en haut et <span class="js-site">Leboncoin</span> en bas, pour copier et coller sans changer d'écran.</p>
         <ol>
           <li>Ouvrez aussi l'appli <span class="js-site">Leboncoin</span>, puis affichez les applis récentes (bouton carré en bas de l'écran).</li>
@@ -776,8 +776,8 @@ body.first-run .bnav .fab{animation:fabP 1.6s ease-in-out infinite}
           <li>Choisissez « Écran partagé » (parfois « Écran scindé » ou une icône de deux rectangles).</li>
           <li>Sélectionnez <span class="js-site">Leboncoin</span> pour la seconde moitié.</li>
         </ol>
-        <p>Les libellés varient un peu selon la marque du téléphone.</p>
-      </div>
+        <p>Les libellés varient selon la marque du téléphone. Tous les téléphones et toutes les applis ne proposent pas l'écran partagé.</p>
+      </details>
       <button class="pill line big-btn js-savepics" type="button"><span class="js-savetxt">Enregistrer la photo</span></button>
       <div class="steps">
         <button class="step" data-copy="title"><b>1</b><span><small>Titre</small><em id="asT"></em></span>Copier</button>
@@ -1534,7 +1534,7 @@ function openAssist(site){
   const site_=site==='lbc'?{t:'Annonce Leboncoin',u:'https://www.leboncoin.fr/deposer-une-annonce',b:'Ouvrir Leboncoin'}:{t:'Annonce Facebook',u:'https://www.facebook.com/marketplace/create/item',b:'Ouvrir Facebook Marketplace'};
   document.querySelectorAll('.js-site').forEach(x=>x.textContent=site==='lbc'?'Leboncoin':'Facebook');
   $('#asSplit').classList.toggle('hidden',isIOS());
-  $('#asTitle').textContent=site_.t;$('#asOpen').href=site_.u;$('#asOpen').firstChild.nodeValue=site_.b+' ';
+  $('#asTitle').textContent=site_.t;$('#asOpen').href=site_.u;$('#asOpen').firstChild.nodeValue='Copier la description et ouvrir le site ';
   $('#asT').textContent=titleOf(m);$('#asD').textContent=noPub($('#shText').value);$('#asP').textContent=price?price+' €':'';
   $('#asPriceRow').classList.toggle('hidden',!price);
   {const sel=[m.etat&&'État : '+m.etat,m.marque&&'Marque : '+m.marque,m.couleur&&'Couleur : '+m.couleur].filter(Boolean);
@@ -1551,6 +1551,10 @@ $('#asUnpub').addEventListener('click',()=>{const it=shareMeta;if(!it||!it.pub)r
 $('#rpClose').addEventListener('click',()=>$('#replies').classList.remove('open'));
 $('#rpList').addEventListener('click',e=>{const b=e.target.closest('.reply');if(!b)return;copyStr(b.querySelector('span').textContent,'Réponse copiée !').then(ok=>{if(ok){document.querySelectorAll('.reply').forEach(x=>{x.classList.remove('ok');x.querySelector('b').textContent='Copier'});b.classList.add('ok');b.querySelector('b').textContent='Copié'}})});
 $('#nudgeHome').addEventListener('click',()=>{tab='attente';render();go('vObjets')});
+$('#asOpen').addEventListener('click',async e=>{e.preventDefault();const u=$('#asOpen').href;
+  const ok=await copyStr(noPub($('#shText').value),'Description copiée. Tapez le titre et le prix dans le site.');
+  if(ok){const st=document.querySelector('.step[data-copy="desc"]');if(st)st.classList.add('ok')}
+  if(!inPreview)window.open(u,'_blank','noopener')});
 $('#btnLbc').addEventListener('click',()=>openAssist('lbc'));
 $('#btnFb').addEventListener('click',()=>openAssist('fb'));
 document.querySelectorAll('.step').forEach(b=>b.addEventListener('click',()=>{
