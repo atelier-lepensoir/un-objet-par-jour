@@ -789,8 +789,13 @@ body.first-run .bnav .fab{animation:fabP 1.6s ease-in-out infinite}
       <p class="hint" style="padding:0" id="asHint"></p>
       <div class="pubbox">
         <h4>Annonce publiée ?</h4>
-        <p>Notez-le ici. L'appli ajoute « Vous pouvez retrouver mon annonce sur <span class="js-site">Leboncoin</span> » à votre message de partage.</p>
+        <p>Notez-le ici, maintenant ou plus tard : dans « Mes objets », le bouton « Lien de l'annonce » de l'objet ramène à cet encadré. L'appli ajoute « Vous pouvez retrouver mon annonce sur <span class="js-site">Leboncoin</span> » à votre message de partage.</p>
+        <div class="fxrow" id="pubSites">
+          <button class="fx" type="button" data-pubsite="lbc" aria-pressed="true">Leboncoin</button>
+          <button class="fx" type="button" data-pubsite="fb" aria-pressed="false">Marketplace</button>
+        </div>
         <div class="field"><label class="lab" for="asLink">Lien de l'annonce (facultatif)</label><input id="asLink" inputmode="url" placeholder="https://…" maxlength="300"></div>
+        <button class="pill line sm" id="asPaste" type="button">Coller le lien copié</button>
         <button class="pill ink" id="asPub" type="button">C'est publié</button>
         <button class="link hidden" id="asUnpub" type="button">L'annonce n'est plus en ligne</button>
       </div>
@@ -948,7 +953,7 @@ function repliesFor(it){const n=it.name||'l\'objet',pl=it.place||lsPlace(),ou=pl
   if(it.type==='troc')return [dispo,`Que proposez-vous en échange ?`,`Merci pour la proposition, mais ce n'est pas ce que je recherche.`,rdv,resa,parti];
   return [dispo,`C'est un don : le premier qui peut venir le chercher l'emporte. Quand pouvez-vous passer ?`,rdv,resa,envoi,parti]}
 function openReplies(it){$('#rpList').innerHTML=repliesFor(it).map(t=>`<button class="reply" type="button"><span>${esc(t)}</span><b>Copier</b></button>`).join('');$('#replies').classList.add('open');$('#replies').scrollTop=0}
-function card(x,acts,gone){return `<div class="orow"><div class="oimg${x.example&&gone?' exg':''}"><img src="${x.img}" alt="">${x.example?'<span class="exm">Exemple</span>':''}</div><div class="omid"><div class="name">${esc(x.name||'Objet')}</div>${chip(x,gone)}${gone?'':pubInfo(x)}${gone?'':`<button class="link" data-act="del" data-id="${x.id}">Retirer</button>`}</div><div class="oact">${acts}</div></div>`}
+function card(x,acts,gone){return `<div class="orow"><div class="oimg${x.example&&gone?' exg':''}"><img src="${x.img}" alt="">${x.example?'<span class="exm">Exemple</span>':''}</div><div class="omid"><div class="name">${esc(x.name||'Objet')}</div>${chip(x,gone)}${gone?'':pubInfo(x)}${!gone&&x.channel==='ligne'&&!x.example?`<button class="link" data-act="publink" data-id="${x.id}">${pubKeys(x).length?'Modifier le lien de l\'annonce':'Lien de l\'annonce'}</button>`:''}${gone?'':`<button class="link" data-act="del" data-id="${x.id}">Retirer</button>`}</div><div class="oact">${acts}</div></div>`}
 function render(){
   const list=view(),s=stats(list);
   $('#ringTxt').textContent='OBJETS EN MOINS CHEZ VOUS • OBJETS EN MOINS CHEZ VOUS •';
@@ -1175,6 +1180,7 @@ $('#panel').addEventListener('click',async e=>{
     it.status='gone';it.goneAt=today();save(it);render();bumpCounter();toast('Un objet de moins !');maybeInvite();
   }else if(b.dataset.act==='reshare'){openShare(it.img,it.text,it)}
   else if(b.dataset.act==='replies'){openReplies(it)}
+  else if(b.dataset.act==='publink'){openPub(it)}
   else if(b.dataset.act==='snooze'){it.nudged=today();save(it);render()}
   else if(b.dataset.act==='lower'){
     const p=await ask({title:'Nouveau prix',text:'Le prix change dans l\'appli. Pensez à le modifier aussi sur vos annonces en ligne.',input:{label:'Prix (€)',number:true,value:it.price?Math.max(1,Math.round(it.price*.8)):''},yes:'Valider'});if(p===null||!p)return;
@@ -1484,7 +1490,17 @@ const PUBRE=/\n*Vous pouvez retrouver mon annonce sur [^\n]*$/;
 const noPub=t=>(t||'').replace(PUBRE,'');
 function withPub(text,m){const t=noPub(text),l=pubLine(m);return l&&t?t+'\n\n'+l:t}
 function growText(){const t=$('#shText');t.style.height='auto';t.style.height=Math.min(420,t.scrollHeight+8)+'px'}
+/* Si l'appli est rechargée pendant un aller-retour vers un autre site, on rouvre l'objet en cours */
+function rememberOpen(site){try{if(shareMeta&&shareMeta.id)localStorage.setItem('uopj-open',JSON.stringify({id:shareMeta.id,site,t:Date.now()}));else localStorage.removeItem('uopj-open')}catch(_){}}
+function forgetOpen(){try{localStorage.removeItem('uopj-open')}catch(_){}}
+function restoreOpen(){let o=null;try{o=JSON.parse(localStorage.getItem('uopj-open'))}catch(_){}
+  if(!o||Date.now()-o.t>2*36e5)return forgetOpen();
+  const it=view().find(x=>x.id===o.id);if(!it||it.status!=='pending')return forgetOpen();
+  tab='attente';render();go('vObjets');openShare(it.img,it.text,it);
+  if(o.site){openAssist(o.site);setTimeout(()=>document.querySelector('.pubbox').scrollIntoView({block:'center'}),350)}}
+function openPub(it){openShare(it.img,it.text,it);openAssist(pubKeys(it)[0]||'lbc');setTimeout(()=>document.querySelector('.pubbox').scrollIntoView({block:'center'}),350)}
 function syncPub(){const m=shareMeta||{},cur=m.pub&&m.pub[assistSite];
+  document.querySelectorAll('[data-pubsite]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.pubsite===assistSite));
   $('#asLink').value=cur&&cur.link||'';$('#asPub').textContent=cur?'Mettre à jour':'C\'est publié sur '+SITES[assistSite];$('#asUnpub').classList.toggle('hidden',!cur)}
 const picName=i=>((shareMeta&&shareMeta.name||'objet').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9]+/g,'-').replace(/^-|-$/g,'').toLowerCase().slice(0,30)||'objet')+'-'+(i+1)+'.jpg';
 async function savePics(){
@@ -1509,7 +1525,7 @@ function openShare(img,text,meta){
   $('#shNative').classList.toggle('hidden',!shareFile);
   $('#shSites').classList.toggle('hidden',!meta);
   $('#assist').classList.add('hidden');
-  updateLinks();$('#share').classList.add('open');$('#share').scrollTop=0;growText();
+  updateLinks();$('#share').classList.add('open');$('#share').scrollTop=0;growText();rememberOpen(null);
 }
 function updateLinks(){
   const t=encodeURIComponent($('#shText').value);
@@ -1530,7 +1546,7 @@ const copyText=()=>copyStr($('#shText').value,'Texte copié !');
 function titleOf(m){let n=(m&&m.name)||'';if(n){[m.marque,m.couleur].forEach(x=>{if(x&&!n.toLowerCase().includes(x.toLowerCase()))n+=' '+x});return n.charAt(0).toUpperCase()+n.slice(1)}return {don:'Don',vente:'À vendre',troc:'Échange'}[m&&m.type]||'Objet'}
 function openAssist(site){
   const m=shareMeta||{},price=m.type==='vente'&&m.price?String(m.price).replace('.',','):'';
-  assistSite=site;syncPub();
+  assistSite=site;syncPub();rememberOpen(site);
   $('#asHint').textContent=site==='lbc'?'À l\'étape « Photos », touchez « Choisir depuis la galerie » et sélectionnez les photos enregistrées (album Téléchargements).':'Facebook s\'ouvre sur Marketplace : touchez « Vendre », puis « Créer une annonce » et « Article ». Si vous arrivez sur une page de recherche, touchez la flèche de retour ou l\'icône Marketplace (la petite boutique). Ajoutez ensuite les photos enregistrées (album Téléchargements).';
   const site_=site==='lbc'?{t:'Annonce Leboncoin',u:'https://www.leboncoin.fr/deposer-une-annonce',b:'Ouvrir Leboncoin'}:{t:'Annonce Facebook',u:'https://www.facebook.com/marketplace/',b:'Ouvrir Facebook Marketplace'};
   document.querySelectorAll('.js-site').forEach(x=>x.textContent=site==='lbc'?'Leboncoin':'Facebook');
@@ -1547,6 +1563,8 @@ $('#asPub').addEventListener('click',()=>{const it=shareMeta;if(!it||!it.id)retu
   let link=$('#asLink').value.trim();if(link&&!/^https?:\/\//i.test(link))link='https://'+link;
   it.pub=it.pub||{};it.pub[assistSite]={d:(it.pub[assistSite]&&it.pub[assistSite].d)||today(),link};
   save(it);$('#shText').value=withPub($('#shText').value,it);updateLinks();growText();syncPub();render();toast('Noté ! La mention est ajoutée à votre message de partage.')});
+document.querySelectorAll('[data-pubsite]').forEach(b=>b.addEventListener('click',()=>{openAssist(b.dataset.pubsite)}));
+$('#asPaste').addEventListener('click',async()=>{try{const t=(await navigator.clipboard.readText()||'').trim();if(/^(https?:\/\/|www\.)\S+$/i.test(t)){$('#asLink').value=t;toast('Lien collé. Touchez le bouton pour valider.')}else toast('Aucun lien dans le presse-papiers : copiez d\'abord le lien de l\'annonce.')}catch(_){toast('Collage impossible ici : faites un appui long dans la case, puis « Coller ».')}});
 $('#asUnpub').addEventListener('click',()=>{const it=shareMeta;if(!it||!it.pub)return;delete it.pub[assistSite];
   save(it);$('#shText').value=withPub($('#shText').value,it);updateLinks();growText();syncPub();render();toast('Mention retirée.')});
 $('#rpClose').addEventListener('click',()=>$('#replies').classList.remove('open'));
@@ -1576,7 +1594,7 @@ $('#shNative').addEventListener('click',async()=>{
   try{await navigator.share({files:shareFiles.length?shareFiles:[shareFile],text:$('#shText').value})}
   catch(e){if(e&&e.name==='AbortError')return;$('#shNative').classList.add('hidden');toast('Partage direct indisponible ici : utilisez les boutons.')}
 });
-$('#shClose').addEventListener('click',()=>{$('#share').classList.remove('open');maybeInvite()});
+$('#shClose').addEventListener('click',()=>{$('#share').classList.remove('open');forgetOpen();maybeInvite()});
 $('#shCopy').addEventListener('click',copyText);
 $('#shareProgress').addEventListener('click',()=>{
   const list=view(),s=stats(list),st=streak(list),W=1080,c=document.createElement('canvas');c.width=c.height=W;const g=c.getContext('2d');
@@ -1703,7 +1721,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')['#editor','#share',
 /* ---------- Démarrage ---------- */
 render();
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{exCache=null;render()});
-openDB().then(loadAll).then(list=>{if(list&&list.length){items=list;render()}});
+openDB().then(loadAll).then(list=>{if(list&&list.length){items=list;render();restoreOpen()}});
 })();
 </script>
 <script>if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("sw.js").catch(()=>{})})}</script>
