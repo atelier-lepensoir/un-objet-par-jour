@@ -702,6 +702,20 @@ body.first-run .bnav .fab{animation:fabP 1.6s ease-in-out infinite}
       <div class="field" id="wantField"><label class="lab" for="edWant">Contre quoi ?</label><input id="edWant" placeholder="Propositions" maxlength="40"></div>
       <div class="field" id="placeField"><label class="lab" for="edPlace">Lieu</label><input id="edPlace" placeholder="Votre ville" maxlength="30"></div>
     </div>
+    <div class="field hidden" id="descBox">
+      <span class="lab">État (facultatif)</span>
+      <div class="fxrow" id="etatRow">
+        <button class="fx" type="button" data-etat="neuf" aria-pressed="false">Neuf</button>
+        <button class="fx" type="button" data-etat="très bon état" aria-pressed="false">Très bon état</button>
+        <button class="fx" type="button" data-etat="bon état" aria-pressed="false">Bon état</button>
+        <button class="fx" type="button" data-etat="état satisfaisant" aria-pressed="false">Satisfaisant</button>
+        <button class="fx" type="button" data-etat="pour pièces" aria-pressed="false">Pour pièces</button>
+      </div>
+      <div class="two">
+        <div class="field"><label class="lab" for="edMarque">Marque</label><input id="edMarque" placeholder="Facultatif" maxlength="30"></div>
+        <div class="field"><label class="lab" for="edCouleur">Couleur</label><input id="edCouleur" placeholder="Facultatif" maxlength="30"></div>
+      </div>
+    </div>
     <div class="field hidden" id="textField"><label class="lab" for="edText">Texte de l'annonce</label><textarea id="edText"></textarea><p class="hint">Préparé pour vous. Vous pouvez le modifier.</p></div>
     <p class="hint hidden" id="jeteHint">Pensez au tri : déchetterie, point de collecte, borne textile ou ressourcerie. La photo est facultative : vous pouvez aussi compter l'objet sans photo avec le bouton rouge.</p>
     <button class="pill ink big-btn" id="edSave" disabled><span id="edSaveTxt">Choisissez d'abord</span> <svg width="22" height="22"><use href="#i-arrow"/></svg></button>
@@ -739,6 +753,7 @@ body.first-run .bnav .fab{animation:fabP 1.6s ease-in-out infinite}
         <button class="step" data-copy="desc"><b>2</b><span><small>Description</small><em id="asD"></em></span>Copier</button>
         <button class="step" data-copy="price" id="asPriceRow"><b>3</b><span><small>Prix</small><em id="asP"></em></span>Copier</button>
       </div>
+      <p class="hint hidden" id="asSel" style="padding:0"></p>
       <a class="pill ink big-btn" id="asOpen" target="_blank" rel="noopener" href="#">Ouvrir Leboncoin <svg width="22" height="22"><use href="#i-arrow"/></svg></a>
       <p class="hint" style="padding:0">À l'étape « Photos », touchez « Choisir depuis la galerie » et sélectionnez les photos enregistrées (album Téléchargements).</p>
       <div class="safety"><h4>Vendre en sécurité</h4><div class="safety-list"></div></div>
@@ -1101,12 +1116,12 @@ const PRESETS={
   doux:{auto:true,b:10,c:-15,s:-8,w:10,sh:0,white:false},
   fondblanc:{auto:true,b:12,c:12,s:6,w:0,sh:40,white:true}
 };
-const ed={extra:[],scene:{detour:false,tol:45,bg:'blanc',frame:'aucun'},cut:null,cutFresh:false,img:null,src:null,base:null,type:null,channel:'ligne',label:true,textEdited:false,rot:0,zoom:1,cx:0,cy:0,preset:'original',adj:{...PRESETS.original}};
+const ed={etat:'',extra:[],scene:{detour:false,tol:45,bg:'blanc',frame:'aucun'},cut:null,cutFresh:false,img:null,src:null,base:null,type:null,channel:'ligne',label:true,textEdited:false,rot:0,zoom:1,cx:0,cy:0,preset:'original',adj:{...PRESETS.original}};
 const onPick=async e=>{
   const f=e.target.files&&e.target.files[0];e.target.value='';if(!f)return;
   try{ed.img=await loadImage(f)}catch(err){toast('Image illisible. Essayez un JPG ou un PNG.');return}
   Object.assign(ed,{type:null,channel:'ligne',textEdited:false,label:true,rot:0});
-  $('#edName').value='';$('#edPrice').value='';$('#edWant').value='';$('#edText').value='';
+  $('#edName').value='';$('#edPrice').value='';$('#edWant').value='';$('#edText').value='';$('#edMarque').value='';$('#edCouleur').value='';ed.etat='';
   try{$('#edPlace').value=localStorage.getItem('uopj-place')||''}catch(_){}
   {const st=aventState();$('#edName').placeholder=getDefi().mode==='avent'&&st.phase==='live'?`Case ${st.day} : ${AVENT[st.day-1].toLowerCase()}`:(surpriseOfDay()?`Surprise : ${surpriseOfDay()}`:'Lampe de chevet, bon état');}
   $('#optLabel').checked=true;ed.scene.detour=false;ed.extra=[];renderExtra();
@@ -1295,13 +1310,20 @@ function drawEditor(){
   g.restore();
   if(place){g.font=`700 34px ${BODY}`;const w=g.measureText(place).width+48;pillShape(g,36,36,w,62);g.fillStyle=COL.paper;g.fill();g.fillStyle=COL.ink;g.textAlign='left';g.textBaseline='middle';g.fillText(place,60,68)}
 }
+/* État, marque, couleur : une ligne chacune, seulement si renseignées */
+function detailLines(){
+  const m=$('#edMarque').value.trim(),c=$('#edCouleur').value.trim(),l=[];
+  if(m)l.push('Marque : '+m);if(c)l.push('Couleur : '+c);if(ed.etat)l.push('État : '+ed.etat);
+  return l.length?'\n'+l.join('\n')+'\n':' ';
+}
 function autoText(){
   const n=$('#edName').value.trim()||'cet objet',place=$('#edPlace').value.trim(),price=parsePrice($('#edPrice').value);
-  const want=$('#edWant').value.trim();
-  if(ed.type==='troc')return `J'échange : ${n}${want?' contre '+want:''}. Faites-moi vos propositions !${place?' À '+place+'.':''}`;
-  if(ed.type==='don')return `Je donne : ${n}. À récupérer${place?' à '+place:''}. Premier qui répond !`;
-  if(ed.type==='vente')return `À vendre : ${n}${price?', '+euros(price):''}.${place?' Remise en main propre à '+place+'.':''}`;
-  return '';
+  const want=$('#edWant').value.trim(),d=detailLines();
+  let t='';
+  if(ed.type==='troc')t=`J'échange : ${n}${want?' contre '+want:''}.${d}Faites-moi vos propositions !${place?' À '+place+'.':''}`;
+  else if(ed.type==='don')t=`Je donne : ${n}.${d}À récupérer${place?' à '+place:''}. Premier qui répond !`;
+  else if(ed.type==='vente')t=`À vendre : ${n}${price?', '+euros(price):''}.${place?d+'Remise en main propre à '+place+'.':d}`;
+  return t.trim();
 }
 function syncEditor(){
   document.querySelectorAll('.choice').forEach(b=>b.setAttribute('aria-pressed',b.dataset.type===ed.type));
@@ -1311,7 +1333,8 @@ function syncEditor(){
   $('#venteBox').classList.toggle('hidden',t!=='vente');
   $('#detailBox').classList.toggle('hidden',!t||t==='jete');
   $('#priceField').classList.toggle('hidden',t!=='vente');$('#wantField').classList.toggle('hidden',t!=='troc');
-  $('#textField').classList.toggle('hidden',!online);
+  $('#textField').classList.toggle('hidden',!online);$('#descBox').classList.toggle('hidden',!online);
+  document.querySelectorAll('[data-etat]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.etat===ed.etat));
   $('#jeteHint').classList.toggle('hidden',t!=='jete');
   $('#labelToggle').classList.toggle('hidden',t==='jete');
   if(online&&!ed.textEdited)$('#edText').value=autoText();
@@ -1322,7 +1345,8 @@ function syncEditor(){
 }
 document.querySelectorAll('.choice').forEach(b=>b.addEventListener('click',()=>{ed.type=b.dataset.type;ed.textEdited=false;syncEditor()}));
 document.querySelectorAll('.seg button').forEach(b=>b.addEventListener('click',()=>{ed.channel=b.dataset.ch;syncEditor()}));
-['#edName','#edPrice','#edPlace','#edWant'].forEach(s=>$(s).addEventListener('input',syncEditor));
+['#edName','#edPrice','#edPlace','#edWant','#edMarque','#edCouleur'].forEach(s=>$(s).addEventListener('input',syncEditor));
+document.querySelectorAll('[data-etat]').forEach(b=>b.addEventListener('click',()=>{ed.etat=ed.etat===b.dataset.etat?'':b.dataset.etat;syncEditor()}));
 $('#edText').addEventListener('input',()=>{ed.textEdited=true});
 
 document.querySelectorAll('[data-bg]').forEach(b=>b.addEventListener('click',()=>{ed.scene.bg=b.dataset.bg;document.querySelectorAll('[data-bg]').forEach(x=>x.setAttribute('aria-pressed',x===b));drawEditor()}));
@@ -1353,6 +1377,7 @@ $('#edSave').addEventListener('click',()=>{
   const channel=ed.type==='jete'?'':ed.type==='vente'?ed.channel:'ligne';
   const it={id:uid(),name:$('#edName').value.trim(),type:ed.type,channel,price:parsePrice($('#edPrice').value),soldPrice:0,created:today(),status:ed.type==='jete'?'gone':'pending',goneAt:ed.type==='jete'?today():null,img,text:$('#edText').value};
   if(ed.extra.length)it.extra=ed.extra.slice();
+  if(channel==='ligne'){const mq=$('#edMarque').value.trim(),cl=$('#edCouleur').value.trim();if(mq)it.marque=mq;if(cl)it.couleur=cl;if(ed.etat)it.etat=ed.etat}
   save(it);$('#editor').classList.remove('open');
   afterSave(it,firstToday);
 });
@@ -1401,13 +1426,15 @@ const copyText=()=>copyStr($('#shText').value,'Texte copié !');
 /* Dans l'aperçu Claude, les liens SMS et e-mail sont bloqués : on copie le texte à la place */
 ['#lnkSms','#lnkMail'].forEach(sel=>$(sel).addEventListener('click',e=>{if(!inPreview)return;e.preventDefault();copyStr($('#shText').value,sel==='#lnkSms'?'Texte copié : ouvrez vos Messages et collez-le.':'Texte copié : ouvrez votre messagerie et collez-le.')}));
 /* Assistant d'annonce champ par champ */
-function titleOf(m){const n=(m&&m.name)||'';if(n)return n.charAt(0).toUpperCase()+n.slice(1);return {don:'Don',vente:'À vendre',troc:'Échange'}[m&&m.type]||'Objet'}
+function titleOf(m){let n=(m&&m.name)||'';if(n){[m.marque,m.couleur].forEach(x=>{if(x&&!n.toLowerCase().includes(x.toLowerCase()))n+=' '+x});return n.charAt(0).toUpperCase()+n.slice(1)}return {don:'Don',vente:'À vendre',troc:'Échange'}[m&&m.type]||'Objet'}
 function openAssist(site){
   const m=shareMeta||{},price=m.type==='vente'&&m.price?String(m.price).replace('.',','):'';
   const site_=site==='lbc'?{t:'Annonce Leboncoin',u:'https://www.leboncoin.fr/deposer-une-annonce',b:'Ouvrir Leboncoin'}:{t:'Annonce Facebook',u:'https://www.facebook.com/marketplace/create/item',b:'Ouvrir Facebook Marketplace'};
   $('#asTitle').textContent=site_.t;$('#asOpen').href=site_.u;$('#asOpen').firstChild.nodeValue=site_.b+' ';
   $('#asT').textContent=titleOf(m);$('#asD').textContent=$('#shText').value;$('#asP').textContent=price?price+' €':'';
   $('#asPriceRow').classList.toggle('hidden',!price);
+  {const sel=[m.etat&&'État : '+m.etat,m.marque&&'Marque : '+m.marque,m.couleur&&'Couleur : '+m.couleur].filter(Boolean);
+   $('#asSel').textContent=sel.length?'À sélectionner dans les listes du site : '+sel.join(' · ')+'.':'';$('#asSel').classList.toggle('hidden',!sel.length)}
   document.querySelectorAll('.step').forEach(x=>x.classList.remove('ok'));
   $('#assist').classList.remove('hidden');$('#assist').scrollIntoView({behavior:'smooth',block:'start'});
 }
