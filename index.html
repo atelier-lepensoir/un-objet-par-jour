@@ -1531,8 +1531,8 @@ function titleOf(m){let n=(m&&m.name)||'';if(n){[m.marque,m.couleur].forEach(x=>
 function openAssist(site){
   const m=shareMeta||{},price=m.type==='vente'&&m.price?String(m.price).replace('.',','):'';
   assistSite=site;syncPub();
-  $('#asHint').textContent=site==='lbc'?'À l\'étape « Photos », touchez « Choisir depuis la galerie » et sélectionnez les photos enregistrées (album Téléchargements).':'Facebook s\'ouvre sur l\'accueil de Marketplace : touchez « Vendre », puis « Créer une annonce » et « Article ». Ajoutez ensuite les photos enregistrées (album Téléchargements).';
-  const site_=site==='lbc'?{t:'Annonce Leboncoin',u:'https://www.leboncoin.fr/deposer-une-annonce',b:'Ouvrir Leboncoin'}:{t:'Annonce Facebook',u:'https://www.facebook.com/marketplace/create/item',b:'Ouvrir Facebook Marketplace'};
+  $('#asHint').textContent=site==='lbc'?'À l\'étape « Photos », touchez « Choisir depuis la galerie » et sélectionnez les photos enregistrées (album Téléchargements).':'Facebook s\'ouvre sur Marketplace : touchez « Vendre », puis « Créer une annonce » et « Article ». Si vous arrivez sur une page de recherche, touchez la flèche de retour ou l\'icône Marketplace (la petite boutique). Ajoutez ensuite les photos enregistrées (album Téléchargements).';
+  const site_=site==='lbc'?{t:'Annonce Leboncoin',u:'https://www.leboncoin.fr/deposer-une-annonce',b:'Ouvrir Leboncoin'}:{t:'Annonce Facebook',u:'https://www.facebook.com/marketplace/',b:'Ouvrir Facebook Marketplace'};
   document.querySelectorAll('.js-site').forEach(x=>x.textContent=site==='lbc'?'Leboncoin':'Facebook');
   $('#asSplit').classList.toggle('hidden',isIOS());
   $('#asTitle').textContent=site_.t;$('#asOpen').href=site_.u;$('#asOpen').firstChild.nodeValue='Copier la description et ouvrir le site ';
