@@ -786,7 +786,7 @@ body.first-run .bnav .fab{animation:fabP 1.6s ease-in-out infinite}
       </div>
       <p class="hint hidden" id="asSel" style="padding:0"></p>
       <a class="pill ink big-btn" id="asOpen" target="_blank" rel="noopener" href="#">Ouvrir Leboncoin <svg width="22" height="22"><use href="#i-arrow"/></svg></a>
-      <p class="hint" style="padding:0">À l'étape « Photos », touchez « Choisir depuis la galerie » et sélectionnez les photos enregistrées (album Téléchargements).</p>
+      <p class="hint" style="padding:0" id="asHint"></p>
       <div class="pubbox">
         <h4>Annonce publiée ?</h4>
         <p>Notez-le ici. L'appli ajoute « Vous pouvez retrouver mon annonce sur <span class="js-site">Leboncoin</span> » à votre message de partage.</p>
@@ -1531,6 +1531,7 @@ function titleOf(m){let n=(m&&m.name)||'';if(n){[m.marque,m.couleur].forEach(x=>
 function openAssist(site){
   const m=shareMeta||{},price=m.type==='vente'&&m.price?String(m.price).replace('.',','):'';
   assistSite=site;syncPub();
+  $('#asHint').textContent=site==='lbc'?'À l\'étape « Photos », touchez « Choisir depuis la galerie » et sélectionnez les photos enregistrées (album Téléchargements).':'Facebook s\'ouvre sur l\'accueil de Marketplace : touchez « Vendre », puis « Créer une annonce » et « Article ». Ajoutez ensuite les photos enregistrées (album Téléchargements).';
   const site_=site==='lbc'?{t:'Annonce Leboncoin',u:'https://www.leboncoin.fr/deposer-une-annonce',b:'Ouvrir Leboncoin'}:{t:'Annonce Facebook',u:'https://www.facebook.com/marketplace/create/item',b:'Ouvrir Facebook Marketplace'};
   document.querySelectorAll('.js-site').forEach(x=>x.textContent=site==='lbc'?'Leboncoin':'Facebook');
   $('#asSplit').classList.toggle('hidden',isIOS());
